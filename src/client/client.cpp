@@ -27,6 +27,25 @@ bool send_all(int socket_fd, const std::string& data) {
 
     return true;
 }
+bool receive_message(int socket_fd, std::string& response) {
+    char buffer[protocol::kMaxMessageLength];
+
+    ssize_t received = recv(
+        socket_fd,
+        buffer,
+        sizeof(buffer) - 1,
+        0
+    );
+
+    if (received <= 0) {
+        return false;
+    }
+
+    buffer[received] = '\0';
+    response = std::string(buffer);
+
+    return true;
+}
 
 int main() {
     int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -82,6 +101,17 @@ if (!send_all(socket_fd, hello_message)) {
 }
 
 std::cout << "HELLO enviado\n";
+
+std::string server_response;
+
+if (!receive_message(socket_fd, server_response)) {
+    std::cerr << "Error: no se pudo recibir respuesta del servidor\n";
+    close(socket_fd);
+    return 1;
+}
+
+std::cout << "Respuesta del servidor: "
+          << server_response;
 
     close(socket_fd);
     return 0;
