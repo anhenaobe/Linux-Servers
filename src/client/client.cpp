@@ -47,7 +47,16 @@ bool receive_message(int socket_fd, std::string& response) {
     return true;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        std::cerr << "Uso: " << argv[0]
+                  << " <IP-servidor> <puerto>\n";
+        return 1;
+    }
+
+    std::string server_ip = argv[1];
+    int server_port = std::stoi(argv[2]);
+    
     int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socket_fd < 0) {
@@ -57,16 +66,16 @@ int main() {
 
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(protocol::kDefaultPort);
+    server_address.sin_port = htons(server_port);
 
-    if (inet_pton(AF_INET, "127.0.0.1", &server_address.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, server_ip.c_str(), &server_address.sin_addr) <= 0) {
         std::cerr << "Error: direccion IP invalida\n";
         close(socket_fd);
         return 1;
     }
 
-    std::cout << "Intentando conectar a 127.0.0.1:"
-              << protocol::kDefaultPort << "...\n";
+    std::cout << "Intentando conectar a " << server_ip << ":"
+              << server_port << "...\n";
 
     if (connect(
             socket_fd,
