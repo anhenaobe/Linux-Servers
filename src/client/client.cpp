@@ -28,21 +28,32 @@ bool send_all(int socket_fd, const std::string& data) {
     return true;
 }
 bool receive_message(int socket_fd, std::string& response) {
-    char buffer[protocol::kMaxMessageLength];
+    response.clear();
 
-    ssize_t received = recv(
-        socket_fd,
-        buffer,
-        sizeof(buffer) - 1,
-        0
-    );
+    char buffer;
 
-    if (received <= 0) {
-        return false;
+    while (true) {
+        ssize_t received = recv(
+            socket_fd,
+            &buffer,
+            1,
+            0
+        );
+
+        if (received <= 0) {
+            return false;
+        }
+
+        if (buffer == protocol::kMessageDelimiter) {
+            break;
+        }
+
+        response += buffer;
+
+        if (response.size() >= protocol::kMaxMessageLength) {
+            return false;
+        }
     }
-
-    buffer[received] = '\0';
-    response = std::string(buffer);
 
     return true;
 }
