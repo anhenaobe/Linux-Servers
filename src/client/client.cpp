@@ -111,8 +111,46 @@ if (!receive_message(socket_fd, server_response)) {
 }
 
 std::cout << "Respuesta del servidor: "
-          << server_response;
+          << server_response << "\n";
 
-    close(socket_fd);
-    return 0;
+
+while (true) {
+    std::string message;
+
+    std::cout << "Mensaje: ";
+    std::getline(std::cin, message);
+
+    if (message == "quit") {
+        std::string quit_message =
+            "QUIT" + std::string(1, protocol::kMessageDelimiter);
+
+        if (!send_all(socket_fd, quit_message)) {
+            std::cerr << "Error: no se pudo enviar QUIT\n";
+        }
+
+        break;
+    }
+
+    std::string msg_command =
+        "MSG " + message + protocol::kMessageDelimiter;
+
+    if (!send_all(socket_fd, msg_command)) {
+        std::cerr << "Error: no se pudo enviar mensaje\n";
+        break;
+    }
+
+    std::string response;
+
+    if (!receive_message(socket_fd, response)) {
+        std::cerr << "Error: conexión cerrada por el servidor\n";
+        break;
+    }
+
+    std::cout << "Servidor: "
+              << response;
+}
+
+close(socket_fd);
+return 0;
+
 }
