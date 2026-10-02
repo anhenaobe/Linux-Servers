@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <csignal>
 
 class Server
 {
@@ -13,6 +14,7 @@ public:
 
     bool initialize(std::uint16_t port);
     int acceptClient();
+    int run(const volatile std::sig_atomic_t& stop_requested);
     void stop();
 
     bool isRunning() const;

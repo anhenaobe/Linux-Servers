@@ -22,7 +22,7 @@ public:
     ClientSession(const ClientSession&) = delete;
     ClientSession& operator=(const ClientSession&) = delete;
 
-    bool sendMessage(std::string_view message);
+    bool sendMessage(std::string_view message, bool final_message = false);
     ReceiveResult receiveMessage(std::string& message);
     void requestStop();
     void disconnect();
@@ -32,6 +32,6 @@ public:
 private:
     int client_socket_{-1};
     std::atomic_bool connected_{false};
-    mutable std::mutex socket_mutex_;
+    std::mutex send_mutex_;
     std::string pending_input_;
 };

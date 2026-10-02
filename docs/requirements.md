@@ -29,7 +29,7 @@
 | FR-001 | El servidor debe escuchar conexiones TCP en el puerto configurado. | UC-001, US-001 |
 | FR-002 | Una conexión debe aceptar múltiples comandos delimitados por `\n`. | UC-003, US-003 |
 | FR-003 | El receptor debe reconstruir líneas fragmentadas y conservar líneas sobrantes. | UC-003, US-003 |
-| FR-004 | `HELLO` debe registrar un username no vacío de hasta `kMaxUsernameLength`. | UC-002, US-002 |
+| FR-004 | `HELLO` debe registrar un token username de 1–32 bytes, sin espacios ni controles ASCII. | UC-002, US-002 |
 | FR-005 | El servidor debe rechazar usernames activos duplicados. | UC-006, US-002 |
 | FR-006 | `MSG` antes de un `HELLO` válido debe producir un error. | UC-003, US-002 |
 | FR-007 | Un `MSG` válido debe producir `OK` al emisor y `FROM` para los demás usuarios. | UC-003, UC-004, US-003, US-004 |
@@ -48,3 +48,4 @@
 | NFR-003 | Los datos compartidos y los envíos concurrentes no deben tener data races conocidas. | US-006 |
 | NFR-004 | Las responsabilidades de transporte, protocolo y usuarios deben permanecer separadas. | Mantenibilidad |
 | NFR-005 | Los descriptores y threads deben cerrarse o unirse durante el cierre controlado. | US-007 |
+| NFR-006 | Los workers terminados deben recolectarse durante la ejecución; el cierre debe despertar recv/send bloqueados. | US-006, US-007 |

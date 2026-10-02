@@ -40,9 +40,8 @@ Interfaz esperada del cliente desarrollado en `feature-client`:
 ./build/client <IP-servidor> <puerto>
 ```
 
-La implementación persistente más reciente del cliente permanece en
-`origin/feature-client` y no se incluye en esta integración del servidor. El
-servidor es compatible con su flujo `HELLO`, varios `MSG` y `QUIT`.
+GitHub ya integró el cliente persistente en `main`. El servidor es compatible
+con su flujo `HELLO`, varios `MSG` y `QUIT`.
 
 ## Protocolo básico
 
@@ -58,6 +57,11 @@ Servidor -> Cliente: FROM <username> <message>\n
 
 El emisor recibe `OK` y los demás usuarios identificados reciben `FROM`. Todos
 los frames están delimitados por `\n`.
+
+El contrato 0.1 queda temporalmente congelado para desarrollar la futura UI.
+Consultar [el protocolo](docs/protocol.md) para límites, errores y eventos
+asíncronos. El username es un token de 1–32 bytes, sin espacios ni controles
+ASCII. No se han añadido funcionalidades de GUI.
 
 ## Estructura
 
@@ -84,7 +88,7 @@ Documentación:
 
 - `main`: integración estable.
 - `feature-client`: implementación del cliente.
-- `feature-server-persistent-sessions`: servidor y documentación de esta iteración.
+- `feature-server`: servidor, protocolo y documentación técnica.
 - `feature/testing`: pruebas formales y validación, responsabilidad separada.
 
 No se añadieron pruebas formales en esta rama. La matriz de verificación solo
