@@ -37,11 +37,11 @@ La interfaz asumida para `feature-client` es:
 ./build/client <IP-servidor> <puerto>
 ```
 
-Envía `HELLO`, mantiene un loop para `MSG` y finaliza mediante `QUIT`, leyendo
-respuestas terminadas en `\n`. Esta rama integra los commits recientes de
-`origin/feature-client` sin reescribir su implementación. El archivo
-`project_status.txt` indicado como fuente funcional no está versionado en
-ninguna rama remota inspeccionada.
+La interfaz esperada envía `HELLO`, mantiene un loop para `MSG` y finaliza
+mediante `QUIT`, leyendo respuestas terminadas en `\n`. Su implementación más
+reciente permanece en `origin/feature-client` y no se incluye en esta
+integración del servidor. El archivo `project_status.txt` indicado como fuente
+funcional no está versionado en ninguna rama remota inspeccionada.
 
 ## Límites actuales
 
