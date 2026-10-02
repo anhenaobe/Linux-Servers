@@ -40,8 +40,9 @@ Interfaz esperada del cliente desarrollado en `feature-client`:
 ./build/client <IP-servidor> <puerto>
 ```
 
-Esta rama integra sin reescribir los commits recientes de `origin/feature-client`.
-El servidor es compatible con su flujo `HELLO`, varios `MSG` y `QUIT`.
+La implementación persistente más reciente del cliente permanece en
+`origin/feature-client` y no se incluye en esta integración del servidor. El
+servidor es compatible con su flujo `HELLO`, varios `MSG` y `QUIT`.
 
 ## Protocolo básico
 
