@@ -1,0 +1,76 @@
+========================================
+ESTADO ACTUAL DEL SERVIDOR — 2026-10-02
+========================================
+
+Git y milestone
+- Desarrollo: feature-server. Commit de código: 03343eb.
+- Código publicado e integrado en main: merge 1ab370a.
+- Este informe se versiona después del merge del código y se integra también
+  en main. Para obtener su commit: git log -1 --oneline -- docs/SERVER_STATUS.txt
+- Consultar git rev-parse HEAD para el hash actual de cada checkout; este
+  documento identifica el milestone y no intenta incluir su propio hash.
+
+Implementado y comprobado
+- TCP IPv4/POSIX, servidor persistente y un thread joinable por cliente.
+- Sesiones persistentes; HELLO, usernames activos únicos, MSG y broadcast.
+- QUIT, cierre inesperado y reutilización de usernames tras desconectar.
+- Framing LF con acumulador; fragmentos y varias líneas en un solo envío.
+- Límites en bytes; errores explícitos y limpieza de workers durante ejecución.
+- SIGINT/SIGTERM: shutdown de sesiones, join de threads y cierre de sockets.
+
+Contrato 0.1 temporalmente congelado (detalle: docs/protocol.md)
+CLIENT -> SERVER: HELLO <username>\n | MSG <message>\n | QUIT\n
+SERVER -> CLIENT: OK\n | ERR <reason>\n | FROM <username> <message>\n
+- Comandos sensibles a mayúsculas. LF obligatorio, sin normalizar CRLF.
+- Username: 1–32 bytes, sin espacios/controles ASCII; sensible a mayúsculas.
+- Texto MSG: 1–986 bytes, sin NUL/CR/LF. Línea: máximo 1024 bytes sin LF.
+- ERR: invalid_username, username_in_use, already_identified, not_identified,
+  invalid_message, invalid_command, message_too_long.
+- message_too_long cierra la sesión; los otros ERR permiten continuar.
+- MSG exige HELLO válido; HELLO repetido se rechaza; QUIT también sirve antes
+  de identificarse. OK de QUIT es la última trama y después llega EOF.
+
+Arquitectura
+- Server: initialize/acceptClient/run/stop; posee y recolecta los workers.
+- ClientSession: posee socket, framing y send serializado; cierre final por RAII.
+- UserManager: registro protegido con mutex y snapshots de destinatarios.
+- MessageHandler: interpreta comandos/estado y produce respuestas/acciones.
+- main: instala señales e inicia Server. Protocol: constantes/validaciones.
+
+Broadcast y futuro cliente/UI
+- Emisor recibe OK; solo los demás usuarios identificados reciben FROM.
+- FROM puede llegar de forma asíncrona, intercalado con OK/ERR. Leer siempre,
+  incluso cuando no se está enviando. FROM no confirma un comando pendiente.
+- Sin IDs: mantener como máximo un comando pendiente para asociar OK/ERR.
+- OK de MSG confirma aceptación, no entrega garantizada a todos.
+- No hay orden global entre emisores concurrentes. Separar autor del texto por
+  el primer espacio después de FROM. Mostrar EOF/error como desconexión.
+- El CLI existente rechaza respuestas de exactamente 1024 bytes: la futura UI
+  debe admitir el límite inclusivo. Su corrección pertenece a feature-client.
+- project_status.txt no apareció en las ramas inspeccionadas; se respetó la
+  interfaz indicada por el equipo. No se modificó cliente ni tests/.
+
+Compilar y ejecutar
+cmake -S . -B build
+cmake --build build
+./build/server
+Escucha en 0.0.0.0:5050. Cliente esperado: ./build/client <IP> <puerto>.
+
+Development checks (no son pruebas formales)
+- Build normal y con -Wall -Wextra -Wpedantic: correctos, sin warnings.
+- Tres usuarios, broadcast, HELLO fragmentado, dos MSG juntos, QUIT/EOF.
+- Duplicados, HELLO repetido, MSG previo, comandos/nombres inválidos y límites.
+- Cierre inesperado, nombre reutilizable y 30 sesiones cortas: descriptores
+  regresaron al nivel inicial, sin threads residuales de esas sesiones.
+- SIGINT/SIGTERM, clientes inactivos, reinicio y apagado con peer que no lee.
+- Cliente existente: HELLO, dos MSG y QUIT. Repetidos después del merge de código.
+
+Pendientes / límites
+- Testing debe validar formalmente estos flujos, carreras, resets TCP, límites
+  UTF-8, emisores simultáneos, peers lentos y limpieza. Suite formal PENDIENTE.
+- Sin GUI, autenticación, TLS, salas, privados ni historial persistente.
+- Sin límite de conexiones ni timeout de inactividad/heartbeat. Un peer sin
+  FIN/RST puede tardar en detectarse. No es un servicio endurecido para Internet.
+- accept revisa estado cada 200 ms; send bloqueado tiene timeout de 2 s por
+  llamada. Peers lentos pueden retrasar un broadcast; no hay cola asíncrona.
+- UTF-8 se acuerda entre clientes, sin validación de codificación en el servidor.
