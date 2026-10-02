@@ -1,85 +1,90 @@
 # Linux TCP Messenger
 
-Proyecto universitario para aprender los fundamentos de una aplicación cliente-servidor en Debian Linux. El equipo desarrollará en C++17 un servidor y varios clientes que se comunicarán mediante TCP y sockets POSIX.
+Proyecto universitario de mensajería cliente-servidor para Debian Linux,
+desarrollado con C++17, sockets POSIX, TCP y CMake.
 
-En esta etapa el repositorio contiene solamente la infraestructura inicial y programas placeholder. La comunicación por sockets, la concurrencia, el protocolo completo y la gestión multiusuario todavía no están implementados.
+El servidor mantiene sesiones persistentes, identifica usuarios mediante
+`HELLO`, procesa varios `MSG`, distribuye mensajes a otros usuarios y cierra una
+sesión mediante `QUIT`. Cada cliente se atiende en un thread y el estado
+compartido de usuarios está sincronizado.
 
-## Arquitectura prevista
+## Requisitos
 
-```text
-Client 1 ----\
-Client 2 ----- > TCP Server (Debian Linux)
-Client 3 ----/
-```
-
-El servidor será el punto central de comunicación. Los clientes establecerán conexiones TCP con él y, en etapas posteriores, intercambiarán mensajes de acuerdo con la especificación de [`docs/protocol.md`](docs/protocol.md).
-
-## Tecnologías
-
-- Debian Linux como plataforma de desarrollo y ejecución.
-- C++17 como lenguaje.
-- TCP como protocolo de transporte.
-- API de sockets POSIX para la comunicación de red futura.
-- CMake para configurar y compilar el proyecto.
-- Git y GitHub para control de versiones y revisión mediante Pull Requests.
-- VS Code con Remote SSH para trabajar en el entorno Linux remoto.
-
-## Estructura del repositorio
-
-```text
-.
-├── CMakeLists.txt
-├── README.md
-├── docs/
-│   └── protocol.md
-├── include/
-│   └── protocol.hpp
-├── src/
-│   ├── client/
-│   │   └── client.cpp
-│   ├── common/
-│   │   └── protocol.cpp
-│   └── server/
-│       └── server.cpp
-└── tests/
-    └── README.md
-```
+- Debian Linux o sistema compatible con sockets POSIX.
+- Compilador con soporte C++17.
+- CMake 3.16 o posterior.
+- Implementación de threads POSIX disponible para `std::thread`.
 
 ## Compilación
-
-Desde la raíz del repositorio:
 
 ```bash
 cmake -S . -B build
 cmake --build build
 ```
 
-CMake configura C++17, compila el código compartido del protocolo y genera los ejecutables `server` y `client` dentro de `build/`.
+Los ejecutables se generan como `build/server` y `build/client`.
 
-## Ejecución actual
+## Ejecución
 
-Después de compilar en Debian Linux:
+Servidor:
 
 ```bash
 ./build/server
-./build/client
 ```
 
-Por ahora ambos programas solo imprimen un mensaje placeholder; aún no abren conexiones de red.
+El puerto predeterminado es `5050`. `Ctrl+C` solicita un cierre controlado.
 
-## Flujo de trabajo Git
+Interfaz esperada del cliente desarrollado en `feature-client`:
 
-La rama estable es `main` y la rama de integración es `develop`. Cada integrante debe trabajar en una rama `feature/*` creada desde `develop`:
+```bash
+./build/client <IP-servidor> <puerto>
+```
 
-- `feature/server`: trabajo relacionado con el servidor.
-- `feature/client`: trabajo relacionado con el cliente.
-- `feature/testing`: pruebas y soporte de validación.
+Esta rama integra sin reescribir los commits recientes de `origin/feature-client`.
+El servidor es compatible con su flujo `HELLO`, varios `MSG` y `QUIT`.
 
-El flujo acordado es:
+## Protocolo básico
 
 ```text
-feature/* -> Pull Request -> develop
-develop   -> Pull Request -> main
+Cliente -> Servidor: HELLO <username>\n
+Cliente -> Servidor: MSG <message>\n
+Cliente -> Servidor: QUIT\n
+
+Servidor -> Cliente: OK\n
+Servidor -> Cliente: ERR <reason>\n
+Servidor -> Cliente: FROM <username> <message>\n
 ```
 
-No se trabaja directamente sobre `main`. Antes de abrir un Pull Request, cada integrante debe compilar sus cambios, mantener sus commits enfocados y actualizar su rama con los cambios recientes de `develop` cuando sea necesario.
+El emisor recibe `OK` y los demás usuarios identificados reciben `FROM`. Todos
+los frames están delimitados por `\n`.
+
+## Estructura
+
+```text
+include/protocol.hpp       Constantes y validaciones compartidas
+src/common/protocol.cpp    Implementación de validaciones
+src/server/                Servidor, sesiones, protocolo y usuarios
+src/client/                Cliente (responsabilidad de feature-client)
+docs/                      Especificación y documentación técnica
+tests/                     Trabajo formal de feature/testing
+```
+
+Documentación:
+
+- [Descripción funcional](docs/functional_description.md)
+- [Requisitos y casos de uso](docs/requirements.md)
+- [Arquitectura](docs/architecture.md)
+- [Protocolo](docs/protocol.md)
+- [Matriz de verificación](docs/verification_matrix.md)
+- [Grafo de llamadas](docs/call_graph.md)
+- [Diagramas de interacción](docs/interaction_diagrams.md)
+
+## Ramas de trabajo
+
+- `main`: integración estable.
+- `feature-client`: implementación del cliente.
+- `feature-server-persistent-sessions`: servidor y documentación de esta iteración.
+- `feature/testing`: pruebas formales y validación, responsabilidad separada.
+
+No se añadieron pruebas formales en esta rama. La matriz de verificación solo
+registra comprobaciones manuales de desarrollo y trabajo formal pendiente.

@@ -1,47 +1,67 @@
-# Especificación inicial del protocolo
+# Protocolo de mensajería
 
-**Protocol Version 0.1**
+**Versión 0.1**
 
-Esta es una propuesta inicial para guiar la implementación y puede evolucionar durante el proyecto. El parser completo todavía no está implementado.
+## Transporte y framing
 
-## Transporte y codificación
+- Transporte: TCP sobre IPv4.
+- Codificación prevista: texto compatible con UTF-8/ASCII.
+- Cada frame termina en `\n`.
+- El delimitador no forma parte del comando entregado al parser.
+- Una línea, sin `\n`, no puede superar `protocol::kMaxMessageLength`.
 
-- Transporte: TCP.
-- Codificación inicial: UTF-8 compatible con ASCII.
-- Framing: cada mensaje de aplicación termina con el carácter newline `\n`.
+TCP no conserva fronteras entre `send()` y `recv()`. El servidor acumula bytes
+por sesión, reconstruye líneas fragmentadas y conserva frames adicionales para
+la siguiente llamada a `receiveMessage()`.
 
-## Operaciones propuestas
-
-### Cliente -> Servidor
-
-```text
-HELLO <username>
-MSG <message>
-QUIT
-```
-
-- `HELLO` propone registrar el nombre del cliente en la conexión.
-- `MSG` propone enviar un mensaje de texto.
-- `QUIT` propone finalizar la sesión de forma ordenada.
-
-### Servidor -> Cliente
+## Cliente hacia servidor
 
 ```text
-OK
-ERR <reason>
-FROM <username> <message>
+HELLO <username>\n
+MSG <message>\n
+QUIT\n
 ```
 
-- `OK` propone confirmar una operación válida.
-- `ERR` propone informar un error con su motivo.
-- `FROM` propone entregar un mensaje indicando el usuario de origen.
+### `HELLO`
 
-Cada línea mostrada representa un mensaje lógico y debe enviarse terminada en `\n`.
+Identifica la sesión. El username debe ser no vacío, medir como máximo
+`kMaxUsernameLength`, no contener `\r`/`\n` y no estar registrado por otra
+sesión. Los nombres son sensibles a mayúsculas. Un segundo `HELLO` después de
+identificarse se rechaza.
 
-## Framing sobre TCP
+### `MSG`
 
-TCP es un flujo de bytes y **no preserva las fronteras entre llamadas a `send()` y `recv()`**. Un solo `recv()` puede devolver una parte de un mensaje, varios mensajes completos o una combinación de mensajes completos y parciales.
+Solo está permitido después de `HELLO`. El texto debe ser no vacío y no superar
+`kMaxChatMessageLength`. El límite garantiza que la línea `FROM` resultante no
+supere `kMaxMessageLength` incluso con el username más largo.
 
-Por ello, el receptor deberá conservar los bytes recibidos en un buffer acumulativo. Solo deberá extraer y procesar mensajes completos delimitados por `\n`; cualquier fragmento posterior al último delimitador permanecerá en el buffer hasta recibir más bytes.
+### `QUIT`
 
-La validación de comandos, los límites, el manejo de errores y el parser completo se definirán e implementarán en etapas posteriores.
+Responde `OK` y finaliza solamente la sesión solicitante. También puede usarse
+antes de `HELLO`.
+
+## Servidor hacia cliente
+
+```text
+OK\n
+ERR <reason>\n
+FROM <username> <message>\n
+```
+
+Para un `MSG` válido, el emisor recibe `OK`. Los demás usuarios identificados
+reciben `FROM`; el emisor no recibe su propio broadcast.
+
+Razones de error implementadas:
+
+| Razón | Condición |
+|---|---|
+| `invalid_username` | Username vacío, demasiado largo o con salto de línea. |
+| `username_in_use` | Otro cliente mantiene ese username. |
+| `already_identified` | La sesión ya completó `HELLO`. |
+| `not_identified` | Se recibió `MSG` antes de `HELLO`. |
+| `invalid_message` | Texto vacío o demasiado largo. |
+| `invalid_command` | La línea no coincide con un comando. |
+| `message_too_long` | El framing superó el máximo antes de obtener una línea válida. |
+
+`message_too_long` se considera irrecuperable para esa conexión: el servidor
+envía el error y la cierra. Los demás errores permiten continuar la sesión.
