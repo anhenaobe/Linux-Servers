@@ -76,6 +76,7 @@ tests/                     Trabajo formal de feature/testing
 
 Documentación:
 
+- [Estado del servidor para cliente y testing](docs/SERVER_STATUS.txt)
 - [Descripción funcional](docs/functional_description.md)
 - [Requisitos y casos de uso](docs/requirements.md)
 - [Arquitectura](docs/architecture.md)
