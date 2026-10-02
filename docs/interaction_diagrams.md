@@ -5,7 +5,7 @@
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant S as Server/main
+    participant S as Server::run
     participant CS as ClientSession worker
     participant MH as MessageHandler
     participant UM as UserManager
@@ -53,6 +53,7 @@ sequenceDiagram
     W-->>C: OK\n
     W->>UM: unregisterUser(username, session)
     W->>W: disconnect()
+    Note over W: Server recolecta el worker, hace join y libera el socket
 ```
 
 ## Username duplicado

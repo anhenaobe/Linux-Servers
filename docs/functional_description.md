@@ -37,21 +37,23 @@ La interfaz asumida para `feature-client` es:
 ./build/client <IP-servidor> <puerto>
 ```
 
-La interfaz esperada envía `HELLO`, mantiene un loop para `MSG` y finaliza
-mediante `QUIT`, leyendo respuestas terminadas en `\n`. Su implementación más
-reciente permanece en `origin/feature-client` y no se incluye en esta
-integración del servidor. El archivo `project_status.txt` indicado como fuente
-funcional no está versionado en ninguna rama remota inspeccionada.
+La interfaz envía `HELLO`, mantiene un loop para `MSG` y finaliza mediante
+`QUIT`, leyendo respuestas terminadas en `\n`. GitHub integró ese cliente en
+`main` antes de este milestone. No se modificó su implementación. El archivo
+`project_status.txt` indicado como fuente funcional no está versionado en las
+ramas inspeccionadas; se mantiene la interfaz funcional indicada por el equipo.
 
 ## Límites actuales
 
 - No hay contraseñas, cifrado, cuentas persistentes ni historial.
-- Los usernames son sensibles a mayúsculas y pueden contener espacios, pero no
-  saltos de línea.
-- No existen timeouts de conexión o de envío.
-- Los objetos de sesión y los threads finalizados se conservan hasta detener el
-  servidor para poder hacer `join`; los sockets y usernames sí se liberan al
-  terminar cada sesión.
+- Los usernames son sensibles a mayúsculas, de 1–32 bytes y sin espacios ni
+  controles ASCII; esta regla permite interpretar FROM sin ambigüedad.
+- No hay timeout de inactividad de sesión. La espera de aceptación es de
+  200 ms y un envío bloqueado tiene timeout de 2 s por llamada.
+- Se recolectan sesiones terminadas durante la ejecución, sin esperar al cierre
+  global. No hay un máximo configurado de conexiones simultáneas.
 - El cliente necesita una estrategia de recepción apropiada para mostrar
   broadcasts que puedan llegar fuera de una solicitud inmediata.
 - Las pruebas formales pertenecen a `feature/testing` y siguen pendientes.
+- La desconexión física de un peer sin FIN/RST puede tardar en ser detectada por
+  TCP. No hay heartbeat ni garantía de entrega del broadcast.

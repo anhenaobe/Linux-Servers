@@ -18,11 +18,17 @@ ClientSession::ClientSession(int client_socket)
 ClientSession::~ClientSession()
 {
     disconnect();
+    // El descriptor permanece estable mientras exista una referencia de
+    // broadcast. Solo el último propietario lo libera, evitando reutilización.
+    if (client_socket_ >= 0 && close(client_socket_) < 0) {
+        std::cerr << "Error cerrando socket cliente: "
+                  << std::strerror(errno) << '\n';
+    }
 }
 
-bool ClientSession::sendMessage(std::string_view message)
+bool ClientSession::sendMessage(std::string_view message, bool final_message)
 {
-    std::lock_guard<std::mutex> lock(socket_mutex_);
+    std::lock_guard<std::mutex> lock(send_mutex_);
     if (client_socket_ < 0 || !connected_) {
         return false;
     }
@@ -49,6 +55,10 @@ bool ClientSession::sendMessage(std::string_view message)
         bytes_sent += static_cast<std::size_t>(sent);
     }
 
+    if (final_message) {
+        // Impide que otro broadcast se escriba después del OK de QUIT.
+        requestStop();
+    }
     return true;
 }
 
@@ -107,7 +117,6 @@ void ClientSession::requestStop()
 {
     connected_ = false;
 
-    std::lock_guard<std::mutex> lock(socket_mutex_);
     if (client_socket_ >= 0) {
         // shutdown() despierta al thread que pueda estar bloqueado en recv().
         shutdown(client_socket_, SHUT_RDWR);
@@ -117,17 +126,6 @@ void ClientSession::requestStop()
 void ClientSession::disconnect()
 {
     requestStop();
-
-    std::lock_guard<std::mutex> lock(socket_mutex_);
-    if (client_socket_ < 0) {
-        return;
-    }
-
-    if (close(client_socket_) < 0) {
-        std::cerr << "Error cerrando socket cliente: "
-                  << std::strerror(errno) << '\n';
-    }
-    client_socket_ = -1;
 }
 
 bool ClientSession::isConnected() const

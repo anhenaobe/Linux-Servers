@@ -7,10 +7,11 @@ flowchart TD
     MAIN[main] --> ISH[installSignalHandlers]
     MAIN --> INIT[Server::initialize]
     INIT --> SOCKET[socket / setsockopt / bind / listen]
-    MAIN --> ACCEPT[Server::acceptClient]
+    MAIN --> RUN[Server::run]
+    RUN --> ACCEPT[Server::acceptClient]
     ACCEPT --> POSIX_ACCEPT[accept]
-    MAIN --> CREATE[make_shared ClientSession]
-    MAIN --> THREAD[std::thread manageClient]
+    RUN --> CREATE[make_shared ClientSession]
+    RUN --> THREAD[std::thread lambda -> manageClient]
 
     THREAD --> RECEIVE[ClientSession::receiveMessage]
     RECEIVE --> RECV[recv]
@@ -24,9 +25,11 @@ flowchart TD
     THREAD --> UNREGISTER[UserManager::unregisterUser]
     THREAD --> DISCONNECT[ClientSession::disconnect]
 
-    MAIN --> STOP[Server::stop]
-    MAIN --> REQUEST[ClientSession::requestStop]
-    MAIN --> JOIN[std::thread::join]
+    RUN --> STOP[Server::stop]
+    RUN --> REQUEST[ClientSession::requestStop]
+    RUN --> REAP[erase Worker / Worker destructor]
+    REAP --> JOIN[std::thread::join]
+    REAP --> DESTROY[ClientSession destructor -> close]
 ```
 
 `ClientSession::receiveMessage()` extrae primero cualquier línea ya almacenada

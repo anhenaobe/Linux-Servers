@@ -6,9 +6,6 @@
 
 namespace {
 
-constexpr std::string_view kHelloPrefix = "HELLO ";
-constexpr std::string_view kMessagePrefix = "MSG ";
-
 bool startsWith(std::string_view value, std::string_view prefix)
 {
     return value.size() >= prefix.size()
@@ -32,46 +29,47 @@ MessageResult MessageHandler::handleMessage(
     SessionState& state,
     const std::shared_ptr<ClientSession>& session)
 {
-    if (message == "QUIT") {
+    if (message == protocol::kQuitCommand) {
         state.phase = SessionPhase::Closing;
-        return {"OK\n", {}, true};
+        return {std::string(protocol::kOkResponse), {}, true};
     }
 
-    if (message == "HELLO" || startsWith(message, kHelloPrefix)) {
+    if (message == protocol::kHelloCommand || startsWith(message, protocol::kHelloPrefix)) {
         if (state.phase == SessionPhase::Identified) {
             return errorResult("already_identified");
         }
 
-        const std::string username = message == "HELLO"
+        const std::string username = message == protocol::kHelloCommand
             ? std::string{}
-            : std::string(message.substr(kHelloPrefix.size()));
+            : std::string(message.substr(protocol::kHelloPrefix.size()));
 
         if (!protocol::is_valid_username(username)) {
             return errorResult("invalid_username");
         }
+        state.username = username;
         if (!user_manager_.registerUser(username, session)) {
+            state.username.clear();
             return errorResult("username_in_use");
         }
 
-        state.username = username;
         state.phase = SessionPhase::Identified;
-        return {"OK\n", {}, false};
+        return {std::string(protocol::kOkResponse), {}, false};
     }
 
-    if (message == "MSG" || startsWith(message, kMessagePrefix)) {
+    if (message == protocol::kMessageCommand || startsWith(message, protocol::kMessagePrefix)) {
         if (state.phase != SessionPhase::Identified) {
             return errorResult("not_identified");
         }
 
-        const std::string_view payload = message == "MSG"
+        const std::string_view payload = message == protocol::kMessageCommand
             ? std::string_view{}
-            : message.substr(kMessagePrefix.size());
+            : message.substr(protocol::kMessagePrefix.size());
         if (!protocol::is_valid_message(payload)) {
             return errorResult("invalid_message");
         }
 
         MessageResult result;
-        result.response = "OK\n";
+        result.response = protocol::kOkResponse;
         result.broadcast = "FROM " + state.username + " "
             + std::string(payload) + "\n";
         return result;

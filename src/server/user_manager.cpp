@@ -11,6 +11,14 @@ bool UserManager::registerUser(
     }
 
     std::lock_guard<std::mutex> lock(users_mutex_);
+    const auto existing = users_.find(username);
+    if (existing != users_.end()) {
+        const auto previous = existing->second.lock();
+        if (previous && previous->isConnected()) {
+            return false;
+        }
+        users_.erase(existing);
+    }
     const auto [position, inserted] = users_.emplace(std::move(username), session);
     (void)position;
     return inserted;
@@ -19,7 +27,12 @@ bool UserManager::registerUser(
 bool UserManager::isUsernameAvailable(std::string_view username) const
 {
     std::lock_guard<std::mutex> lock(users_mutex_);
-    return users_.find(std::string(username)) == users_.end();
+    const auto found = users_.find(std::string(username));
+    if (found == users_.end()) {
+        return true;
+    }
+    const auto session = found->second.lock();
+    return !session || !session->isConnected();
 }
 
 void UserManager::unregisterUser(
@@ -45,7 +58,7 @@ std::vector<std::shared_ptr<ClientSession>> UserManager::recipientsExcept(
 
     for (auto user = users_.begin(); user != users_.end();) {
         std::shared_ptr<ClientSession> session = user->second.lock();
-        if (!session) {
+        if (!session || !session->isConnected()) {
             user = users_.erase(user);
             continue;
         }
