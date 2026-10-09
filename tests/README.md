@@ -33,7 +33,7 @@ Cliente C ----/
 | **TC07** | Framing | Mensaje fragmentado | Recibir `"MSG Ho"` y luego `"la\n"` | Reconstrucción correcta del mensaje | PENDIENTE |  |
 | **TC08** | Framing | Múltiples mensajes juntos | Recibir `"MSG 1\nMSG 2\n"` en un bloque | Procesamiento independiente de cada comando | PENDIENTE |  |
 | **TC09** | Concurrencia | Multiusuario básico | 3+ clientes conectados enviando | Broadcast correcto sin mezcla de datos | PENDIENTE |  |
-| **TC10** | Limites | Username/mensaje largo | Exceder límites de username, texto y línea | `ERR invalid_username` (username >32 con línea ≤1024), `ERR invalid_message` (texto >986 con línea ≤1024); `ERR message_too_long` y cierre (línea >1024). Sin truncamiento | PENDIENTE |  |
+| **TC10** | Limites | Username/mensaje largo | Exceder límites de username, texto y línea | `ERR invalid_username` (username >32 con línea ≤1024), `ERR invalid_message` (texto >986 con línea ≤1024); `ERR message_too_long` y cierre (línea >1024). Sin truncamiento | PASS | El servidor identificó que el mensaje superaba el tamaño máximo permitido, rechazó la trama respondiendo ERR message_too_long y la conexión continuó activa para procesar subsiguientes mensajes correctamente. |
 
 ---
 
