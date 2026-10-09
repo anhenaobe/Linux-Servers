@@ -28,7 +28,9 @@ Cliente C ----/
 | **TC02** | Protocolo | Envío de mensaje tras login | `MSG Hola\n` | `OK\n` al emisor y `FROM Andrew Hola\n` a otros clientes identificados | PASS | Verificar que el servidor difunde correctamente las tramas MSG enviadas por un usuario autenticado hacia los demás clientes conectados a la sesión |
 | **TC03** | Protocolo | Salida normal | `QUIT\n` | `OK\n`, EOF y servidor activo | PASS | Verificar que el servidor procesa el comando `QUIT` de forma correcta, finalizando el thread del cliente, cerrando el socket TCP sin generar errores de recursos y manteniendo la disponibilidad del servidor para otros clientes |
 | **TC04** | Protocolo | Mensaje sin identificar | `MSG Hola\n` antes de `HELLO` | `ERR not_identified\n`; sesión abierta | PASS | Verificar que el servidor bloquea la ejecución del comando MSG si el cliente no ha enviado previamente la trama de registro e identificación HELLO <username> el servidor dara respuesta de la siguiente manera ERR invalid_username |
-| **TC05** | Protocolo | Comando inválido | `ALGO Hola\n` | `ERR invalid_command\n` | PENDIENTE |  |
+| **TC05** | Protocolo | Comando inválido | `ALGO Hola\n` | `ERR invalid_command\n` | PASS | Verificar que el servidor valide la sintaxis del protocolo y el nombre de usuario, retornando las tramas de error ERR correspondientes sin cerrar la conexión ni provocar una caída del sistema; al ejecutar los comandos -> HELLO Carlos
+  <- Servidor: ERR invalid_username   y  -> PING
+  <- Servidor: ERR invalid_command |
 | **TC06** | Resiliencia | Desconexión abrupta | Cerrar cliente (Ctrl+C / Kill) | Servidor detecta EOF o error de red; libera la sesión y permanece activo | PENDIENTE |  |
 | **TC07** | Framing | Mensaje fragmentado | Recibir `"MSG Ho"` y luego `"la\n"` | Reconstrucción correcta del mensaje | PENDIENTE |  |
 | **TC08** | Framing | Múltiples mensajes juntos | Recibir `"MSG 1\nMSG 2\n"` en un bloque | Procesamiento independiente de cada comando | PENDIENTE |  |
