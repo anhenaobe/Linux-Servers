@@ -4,8 +4,8 @@ Proyecto universitario de mensajería cliente-servidor para Debian Linux,
 desarrollado con C++17, sockets POSIX, TCP y CMake.
 
 El servidor mantiene sesiones persistentes, identifica usuarios mediante
-`HELLO`, procesa varios `MSG`, distribuye mensajes a otros usuarios y cierra una
-sesión mediante `QUIT`. Cada cliente se atiende en un thread y el estado
+`HELLO`, procesa varios `MSG`, distribuye mensajes a otros usuarios y cierra
+una sesión mediante `QUIT`. Cada cliente se atiende en un thread y el estado
 compartido de usuarios está sincronizado.
 
 ## Requisitos
@@ -34,34 +34,62 @@ Servidor:
 
 El puerto predeterminado es `5050`. `Ctrl+C` solicita un cierre controlado.
 
-Interfaz esperada del cliente desarrollado en `feature-client`:
+Cliente:
 
 ```bash
 ./build/client <IP-servidor> <puerto>
 ```
 
-GitHub ya integró el cliente persistente en `main`. El servidor es compatible
-con su flujo `HELLO`, varios `MSG` y `QUIT`.
+El cliente CLI actual permite identificarse con `HELLO`, enviar múltiples
+`MSG` y cerrar con `QUIT`. El servidor también genera eventos `FROM`
+asíncronos para otros usuarios; la recepción continua de esos eventos queda
+como evolución pendiente de `feature-client`.
 
 ## Protocolo básico
 
 ```text
-Cliente -> Servidor: HELLO <username>\n
-Cliente -> Servidor: MSG <message>\n
-Cliente -> Servidor: QUIT\n
+Cliente -> Servidor: HELLO <username>\\n
+Cliente -> Servidor: MSG <message>\\n
+Cliente -> Servidor: QUIT\\n
 
-Servidor -> Cliente: OK\n
-Servidor -> Cliente: ERR <reason>\n
-Servidor -> Cliente: FROM <username> <message>\n
+Servidor -> Cliente: OK\\n
+Servidor -> Cliente: ERR <reason>\\n
+Servidor -> Cliente: FROM <username> <message>\\n
 ```
 
-El emisor recibe `OK` y los demás usuarios identificados reciben `FROM`. Todos
-los frames están delimitados por `\n`.
+El emisor recibe `OK` y los demás usuarios identificados reciben `FROM`.
+Todos los frames están delimitados por `\\n`.
 
-El contrato 0.1 queda temporalmente congelado para desarrollar la futura UI.
-Consultar [el protocolo](docs/protocol.md) para límites, errores y eventos
-asíncronos. El username es un token de 1–32 bytes, sin espacios ni controles
-ASCII. No se han añadido funcionalidades de GUI.
+El contrato 0.1 queda temporalmente congelado. Consultar
+[la documentación del protocolo](docs/protocol.md) para límites, errores y
+eventos asíncronos.
+
+## Documentación
+
+La documentación correspondiente al primer mini-proyecto está organizada en
+[docs/README.md](docs/README.md).
+
+### Entregables principales
+
+- [Descripción funcional](docs/functional_description.md)
+- [Casos de uso, historias y requisitos del sistema](docs/requirements.md)
+- [Arquitectura propuesta](docs/architecture.md)
+
+### Documentación técnica complementaria
+
+- [Protocolo](docs/protocol.md)
+- [Diagramas de interacción](docs/interaction_diagrams.md)
+- [Grafo de llamadas](docs/call_graph.md)
+- [Estado del servidor](docs/SERVER_STATUS.txt)
+
+### Pruebas y verificación
+
+La matriz de verificación y el trabajo formal de pruebas pertenecen a
+`feature/testing`. Se mantienen en el repositorio, pero están fuera del
+alcance de esta rama:
+
+- [Matriz de verificación](docs/verification_matrix.md)
+- [Plan de pruebas](tests/README.md)
 
 ## Estructura
 
@@ -69,28 +97,17 @@ ASCII. No se han añadido funcionalidades de GUI.
 include/protocol.hpp       Constantes y validaciones compartidas
 src/common/protocol.cpp    Implementación de validaciones
 src/server/                Servidor, sesiones, protocolo y usuarios
-src/client/                Cliente (responsabilidad de feature-client)
-docs/                      Especificación y documentación técnica
+src/client/                Cliente CLI
+docs/                      Documentación del sistema
 tests/                     Trabajo formal de feature/testing
 ```
-
-Documentación:
-
-- [Estado del servidor para cliente y testing](docs/SERVER_STATUS.txt)
-- [Descripción funcional](docs/functional_description.md)
-- [Requisitos y casos de uso](docs/requirements.md)
-- [Arquitectura](docs/architecture.md)
-- [Protocolo](docs/protocol.md)
-- [Matriz de verificación](docs/verification_matrix.md)
-- [Grafo de llamadas](docs/call_graph.md)
-- [Diagramas de interacción](docs/interaction_diagrams.md)
 
 ## Ramas de trabajo
 
 - `main`: integración estable.
-- `feature-client`: implementación del cliente.
-- `feature-server`: servidor, protocolo y documentación técnica.
-- `feature/testing`: pruebas formales y validación, responsabilidad separada.
+- `feature-client`: evolución del cliente y documentación asociada a esta rama.
+- `feature-server`: servidor y documentación técnica del servidor.
+- `feature/testing`: pruebas formales y validación.
 
-No se añadieron pruebas formales en esta rama. La matriz de verificación solo
-registra comprobaciones manuales de desarrollo y trabajo formal pendiente.
+No se mezclan las pruebas formales con la documentación principal de este
+mini-proyecto.
