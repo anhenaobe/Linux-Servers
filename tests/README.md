@@ -24,7 +24,7 @@ Cliente C ----/
 
 | ID | Categoria | Descripción del Test | Entrada / Acción | Resultado Esperado | Estado | Observaciones |
 | --- | --- | --- | --- | --- | --- | --- |
-| **TC01** | Protocolo | Identificación correcta | `HELLO Andrew\n` | `OK\n` | PENDIENTE |  |
+| **TC01** | Protocolo | Identificación correcta | `HELLO Andrew\n` | `OK\n` | PASS |  |CUMPLE CON LO ESPERADO 
 | **TC02** | Protocolo | Envío de mensaje tras login | `MSG Hola\n` | `FROM Andrew Hola\n` en otros clientes | PENDIENTE |  |
 | **TC03** | Protocolo | Salida normal | `QUIT\n` | Cierre limpio de socket, servidor activo | PENDIENTE |  |
 | **TC04** | Protocolo | Mensaje sin identificar | `MSG Hola\n` antes de `HELLO` | `ERR <reason>\n` o desconexión | PENDIENTE |  |
