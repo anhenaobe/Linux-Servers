@@ -40,13 +40,16 @@ mezclar responsabilidades.
 
 ```mermaid
 flowchart LR
-    C1[Client A] <-->|TCP lines| S[Server socket]
-    C2[Client B] <-->|TCP lines| S
-    C3[Client C] <-->|TCP lines| S
+    C1[Client A] -->|connect| S[Server listening socket]
+    C2[Client B] -->|connect| S
+    C3[Client C] -->|connect| S
 
     S -->|accept| CS1[ClientSession A]
     S -->|accept| CS2[ClientSession B]
     S -->|accept| CS3[ClientSession C]
+    C1 <-->|TCP lines| CS1
+    C2 <-->|TCP lines| CS2
+    C3 <-->|TCP lines| CS3
 
     CS1 --> MH[MessageHandler]
     CS2 --> MH
@@ -139,7 +142,7 @@ Los errores de una sesión se manejan dentro del worker correspondiente. Un
 fallo de `send()`, `recv()` o una desconexión termina esa sesión sin detener
 el servidor completo.
 
-Ante `SIGINT` o `SIGTERM`, el servidor deja de aceptar conexiones y solicita
+Ante `SIGINT` o `SIGTERM`, el servidor cierra el socket de escucha y solicita
 `shutdown()` sobre las sesiones activas. Esto despierta las operaciones de
 recepción bloqueadas para que los workers puedan terminar y ser unidos.
 
@@ -167,7 +170,8 @@ El cliente CLI actual integrado en `main` todavía utiliza un flujo
 entrada/respuesta secuencial. Por tanto, la evolución de `feature-client`
 debe incorporar una estrategia de recepción independiente de la entrada del
 usuario para explotar completamente el modelo de mensajería definido por el
-servidor.
+servidor. El resto de las limitaciones del CLI se mantiene en
+[la descripción funcional](functional_description.md#cliente-cli).
 
 ## 11. Estructura de implementación
 

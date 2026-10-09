@@ -6,9 +6,10 @@ Este documento define las funciones y restricciones principales de **Linux TCP
 Messenger**. Los requisitos describen el comportamiento esperado del sistema y
 sirven como base para el diseño arquitectónico y la implementación.
 
-La validación formal y la matriz de pruebas son responsabilidad de la rama
-`feature/testing`; no forman parte del entregable documental desarrollado en
-esta rama.
+La validación formal corresponde a `feature/testing` y se registra en
+[el plan de pruebas](../tests/README.md). La
+[matriz de verificación](verification_matrix.md) relaciona estos requisitos
+con comprobaciones propuestas y distingue su estado de validación.
 
 ## 2. Actores
 
@@ -37,6 +38,7 @@ esta rama.
 **Precondición:** el servidor está iniciado y escuchando.
 
 **Flujo principal:**
+
 1. El usuario ejecuta el cliente con IP y puerto.
 2. El cliente crea un socket TCP.
 3. El cliente establece la conexión con el servidor.
@@ -49,10 +51,11 @@ esta rama.
 **Precondición:** existe una conexión TCP activa.
 
 **Flujo principal:**
-1. El cliente envía `HELLO <username>\\n`.
+
+1. El cliente envía `HELLO <username>\n`.
 2. El servidor valida el username.
 3. El servidor comprueba que no esté activo en otra sesión.
-4. El servidor responde `OK\\n`.
+4. El servidor responde `OK\n`.
 
 **Alternativas:** username inválido o duplicado producen
 `ERR invalid_username` o `ERR username_in_use`.
@@ -62,11 +65,12 @@ esta rama.
 **Precondición:** la sesión está identificada.
 
 **Flujo principal:**
+
 1. El usuario introduce un mensaje.
-2. El cliente envía `MSG <message>\\n`.
+2. El cliente envía `MSG <message>\n`.
 3. El servidor valida el contenido.
-4. El servidor responde `OK\\n` al emisor.
-5. El servidor envía `FROM <username> <message>\\n` a los demás usuarios.
+4. El servidor responde `OK\n` al emisor.
+5. El servidor envía `FROM <username> <message>\n` a los demás usuarios.
 
 ### UC-004 — Recibir mensajes
 
@@ -74,6 +78,7 @@ esta rama.
 conectados.
 
 **Flujo principal:**
+
 1. Otro usuario envía un `MSG`.
 2. El servidor genera un evento `FROM`.
 3. El cliente destinatario recibe el frame y debe mostrarlo.
@@ -81,13 +86,18 @@ conectados.
 **Restricción:** `FROM` puede llegar sin que el usuario destinatario haya
 enviado recientemente un comando.
 
+**Estado de implementación:** el servidor emite estos eventos; el CLI todavía
+no los recibe de forma continua ni distingue eventos de respuestas. Ver
+[las limitaciones del cliente](functional_description.md#cliente-cli).
+
 ### UC-005 — Cerrar sesión
 
 **Precondición:** existe una conexión activa.
 
 **Flujo principal:**
-1. El cliente envía `QUIT\\n`.
-2. El servidor responde `OK\\n`.
+
+1. El cliente envía `QUIT\n`.
+2. El servidor responde `OK\n`.
 3. El servidor libera el username.
 4. La sesión termina.
 
@@ -96,9 +106,10 @@ enviado recientemente un comando.
 **Precondición:** otro cliente ya utiliza el username solicitado.
 
 **Flujo principal:**
-1. Un segundo cliente envía `HELLO <username>\\n`.
+
+1. Un segundo cliente envía `HELLO <username>\n`.
 2. El servidor detecta que el nombre está en uso.
-3. Responde `ERR username_in_use\\n`.
+3. Responde `ERR username_in_use\n`.
 4. La sesión permanece disponible para otro `HELLO` o `QUIT`.
 
 ### UC-007 — Recuperarse de una desconexión
@@ -106,6 +117,7 @@ enviado recientemente un comando.
 **Precondición:** existe una sesión activa.
 
 **Flujo principal:**
+
 1. El peer se desconecta sin ejecutar `QUIT`.
 2. El servidor detecta EOF o un error de red.
 3. La sesión se elimina del registro.
@@ -117,11 +129,12 @@ enviado recientemente un comando.
 **Precondición:** el servidor está ejecutándose.
 
 **Flujo principal:**
+
 1. El operador envía `SIGINT` o `SIGTERM`.
-2. El servidor deja de aceptar conexiones.
+2. El servidor deja de aceptar conexiones y cierra el socket de escucha.
 3. Solicita el cierre de las sesiones activas.
 4. Une los workers terminados.
-5. Cierra el socket de escucha y finaliza.
+5. Libera los recursos restantes y finaliza.
 
 ## 4. Historias de usuario
 
@@ -139,7 +152,7 @@ enviado recientemente un comando.
 | ID | Requisito | Origen |
 |---|---|---|
 | FR-001 | El servidor debe escuchar conexiones TCP en el puerto configurado. | UC-001, US-001 |
-| FR-002 | Una conexión debe aceptar múltiples comandos delimitados por `\\n`. | UC-003, US-003 |
+| FR-002 | Una conexión debe aceptar múltiples comandos delimitados por `\n`. | UC-003, US-003 |
 | FR-003 | El receptor debe reconstruir líneas fragmentadas y conservar líneas sobrantes. | UC-003, US-003 |
 | FR-004 | `HELLO` debe registrar un username de 1–32 bytes, sin espacios ni controles ASCII. | UC-002, US-002 |
 | FR-005 | El servidor debe rechazar usernames activos duplicados. | UC-006, US-002 |
