@@ -27,7 +27,7 @@ Cliente C ----/
 | **TC01** | Protocolo | Identificación correcta | `HELLO Andrew\n` | `OK\n` | PASS | Cumple con lo esperado | 
 | **TC02** | Protocolo | Envío de mensaje tras login | `MSG Hola\n` | `OK\n` al emisor y `FROM Andrew Hola\n` a otros clientes identificados | PASS | Verificar que el servidor difunde correctamente las tramas MSG enviadas por un usuario autenticado hacia los demás clientes conectados a la sesión |
 | **TC03** | Protocolo | Salida normal | `QUIT\n` | `OK\n`, EOF y servidor activo | PASS | Verificar que el servidor procesa el comando `QUIT` de forma correcta, finalizando el thread del cliente, cerrando el socket TCP sin generar errores de recursos y manteniendo la disponibilidad del servidor para otros clientes |
-| **TC04** | Protocolo | Mensaje sin identificar | `MSG Hola\n` antes de `HELLO` | `ERR not_identified\n`; sesión abierta | PENDIENTE |  |
+| **TC04** | Protocolo | Mensaje sin identificar | `MSG Hola\n` antes de `HELLO` | `ERR not_identified\n`; sesión abierta | PASS | Verificar que el servidor bloquea la ejecución del comando MSG si el cliente no ha enviado previamente la trama de registro e identificación HELLO <username> el servidor dara respuesta de la siguiente manera ERR invalid_username |
 | **TC05** | Protocolo | Comando inválido | `ALGO Hola\n` | `ERR invalid_command\n` | PENDIENTE |  |
 | **TC06** | Resiliencia | Desconexión abrupta | Cerrar cliente (Ctrl+C / Kill) | Servidor detecta EOF o error de red; libera la sesión y permanece activo | PENDIENTE |  |
 | **TC07** | Framing | Mensaje fragmentado | Recibir `"MSG Ho"` y luego `"la\n"` | Reconstrucción correcta del mensaje | PENDIENTE |  |
