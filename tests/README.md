@@ -25,7 +25,7 @@ Cliente C ----/
 | ID | Categoria | Descripción del Test | Entrada / Acción | Resultado Esperado | Estado | Observaciones |
 | --- | --- | --- | --- | --- | --- | --- |
 | **TC01** | Protocolo | Identificación correcta | `HELLO Andrew\n` | `OK\n` | PASS | Cumple con lo esperado | 
-| **TC02** | Protocolo | Envío de mensaje tras login | `MSG Hola\n` | `FROM Andrew Hola\n` en otros clientes | PENDIENTE |  |
+| **TC02** | Protocolo | Envío de mensaje tras login | `MSG Hola\n` | `FROM Andrew Hola\n` en otros clientes | FAIL| El servidor cierra la conexión TCP (Broken Pipe) inmediatamente después de recibir el comando MSG, en lugar de mantener la sesión abierta y retransmitir el mensaje |
 | **TC03** | Protocolo | Salida normal | `QUIT\n` | Cierre limpio de socket, servidor activo | PENDIENTE |  |
 | **TC04** | Protocolo | Mensaje sin identificar | `MSG Hola\n` antes de `HELLO` | `ERR <reason>\n` o desconexión | PENDIENTE |  |
 | **TC05** | Protocolo | Comando inválido | `ALGO Hola\n` | `ERR invalid_command\n` | PENDIENTE |  |
