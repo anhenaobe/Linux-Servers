@@ -21,7 +21,7 @@ flowchart TD
     HANDLE --> REGISTER[UserManager::registerUser]
     THREAD --> DIRECT[ClientSession::sendMessage]
     THREAD --> RECIPIENTS[UserManager::recipientsExcept]
-    RECIPIENTS --> BROADCAST[ClientSession::sendMessage]
+    THREAD --> BROADCAST[ClientSession::sendMessage para cada destinatario]
     THREAD --> UNREGISTER[UserManager::unregisterUser]
     THREAD --> DISCONNECT[ClientSession::disconnect]
 
@@ -34,3 +34,7 @@ flowchart TD
 
 `ClientSession::receiveMessage()` extrae primero cualquier línea ya almacenada
 en `pending_input_`; solo llama a `recv()` cuando necesita más bytes.
+
+`UserManager::recipientsExcept()` devuelve referencias a los destinatarios;
+`manageClient()` recorre esa colección y llama a `sendMessage()` sin mantener
+el mutex del registro tomado.

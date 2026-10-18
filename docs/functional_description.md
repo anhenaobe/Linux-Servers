@@ -9,7 +9,7 @@ texto a los demás usuarios conectados.
 
 El sistema se implementa con C++17, sockets POSIX y TCP sobre IPv4. La
 comunicación utiliza un protocolo de texto delimitado por saltos de línea
-(`\\n`).
+(`\n`).
 
 El alcance de este mini-proyecto comprende:
 
@@ -39,16 +39,16 @@ una interfaz gráfica.
 ### Entradas
 
 - Dirección IPv4 y puerto del servidor proporcionados al cliente.
-- Username enviado mediante `HELLO <username>\\n`.
-- Mensajes enviados mediante `MSG <message>\\n`.
-- Solicitud de cierre mediante `QUIT\\n`.
+- Username enviado mediante `HELLO <username>\n`.
+- Mensajes enviados mediante `MSG <message>\n`.
+- Solicitud de cierre mediante `QUIT\n`.
 - Señales `SIGINT` o `SIGTERM` dirigidas al servidor.
 
 ### Salidas
 
-- `OK\\n` para confirmar una operación aceptada.
-- `ERR <reason>\\n` para informar operaciones rechazadas.
-- `FROM <username> <message>\\n` para distribuir un mensaje a los demás
+- `OK\n` para confirmar una operación aceptada.
+- `ERR <reason>\n` para informar operaciones rechazadas.
+- `FROM <username> <message>\n` para distribuir un mensaje a los demás
   usuarios identificados.
 - Cierre de la conexión cuando una sesión termina o el servidor se apaga.
 
@@ -59,7 +59,8 @@ una interfaz gráfica.
 1. El servidor crea un socket TCP IPv4.
 2. Configura el socket para reutilizar la dirección y establece una espera
    limitada para revisar señales y workers terminados.
-3. Asocia el socket al puerto configurado, por defecto `5050`.
+3. Asocia el socket al puerto `5050`, definido en `protocol::kDefaultPort`.
+   El ejecutable no acepta un argumento para cambiarlo.
 4. Comienza a escuchar conexiones entrantes.
 5. Permanece aceptando clientes mientras no se solicite el cierre.
 
@@ -67,20 +68,20 @@ una interfaz gráfica.
 
 1. El cliente establece una conexión TCP.
 2. El servidor crea una sesión independiente para esa conexión.
-3. El cliente envía `HELLO <username>\\n`.
+3. El cliente envía `HELLO <username>\n`.
 4. El servidor valida el username y comprueba que no esté siendo utilizado por
    otra sesión.
-5. Si es válido, responde `OK\\n` y asocia el username con la sesión.
+5. Si es válido, responde `OK\n` y asocia el username con la sesión.
 6. Si es inválido o está ocupado, responde con el error correspondiente y la
    sesión puede continuar para intentar otra identificación o ejecutar `QUIT`.
 
 ### 4.3 Envío de mensajes
 
-1. Un cliente identificado envía `MSG <message>\\n`.
+1. Un cliente identificado envía `MSG <message>\n`.
 2. El servidor valida el mensaje.
-3. El emisor recibe `OK\\n`.
+3. El emisor recibe `OK\n`.
 4. El servidor obtiene una copia de los demás usuarios conectados.
-5. Cada destinatario recibe `FROM <username> <message>\\n`.
+5. Cada destinatario recibe `FROM <username> <message>\n`.
 6. La misma conexión puede repetir el proceso para múltiples mensajes.
 
 Los mensajes recibidos por un destinatario son eventos asíncronos respecto de
@@ -89,8 +90,8 @@ de recepción independiente de la entrada del usuario.
 
 ### 4.4 Cierre de sesión
 
-1. El cliente envía `QUIT\\n`.
-2. El servidor responde `OK\\n`.
+1. El cliente envía `QUIT\n`.
+2. El servidor responde `OK\n`.
 3. El username se libera.
 4. La sesión se cierra y el servidor conserva las demás conexiones activas.
 
@@ -101,10 +102,10 @@ sin detener el servidor.
 
 Ante `SIGINT` o `SIGTERM`, el servidor:
 
-1. deja de aceptar nuevas conexiones;
+1. deja de aceptar nuevas conexiones y cierra el socket de escucha;
 2. solicita el cierre de las sesiones activas mediante `shutdown()`;
 3. espera la terminación de los workers;
-4. libera los recursos y cierra el socket de escucha.
+4. libera los recursos de las sesiones.
 
 ## 5. Reglas funcionales principales
 
@@ -114,7 +115,7 @@ Ante `SIGINT` o `SIGTERM`, el servidor:
 - `MSG` requiere una identificación válida previa.
 - El texto de un mensaje debe tener entre 1 y 986 bytes y no contener NUL,
   CR ni LF.
-- Cada línea de protocolo utiliza `\\n` como delimitador.
+- Cada línea de protocolo utiliza `\n` como delimitador.
 - El servidor reconstruye líneas fragmentadas y puede procesar varias líneas
   recibidas en un mismo bloque TCP.
 - `QUIT` puede ejecutarse incluso antes de `HELLO`.
@@ -144,6 +145,15 @@ El servidor ya soporta eventos `FROM` asíncronos, pero el cliente CLI actual
 todavía utiliza un flujo de entrada/respuesta secuencial y no muestra esos
 eventos mientras el usuario permanece sin enviar un mensaje. Esta limitación
 queda explícitamente identificada para la evolución de `feature-client`.
+
+Además, el CLI toma la siguiente línea recibida como respuesta sin distinguir
+un `FROM` de un `OK`/`ERR`, por lo que puede desasociar respuestas de comandos.
+Rechaza líneas de exactamente 1024 bytes antes del LF, aunque el contrato las
+admite. Tras `HELLO` no exige `OK` para entrar al loop; para salir se escribe
+`quit`, que envía `QUIT` y cierra sin leer su confirmación. Sus envíos no usan
+`MSG_NOSIGNAL`, por lo que una escritura tras desconexión puede provocar SIGPIPE.
+Estas limitaciones corresponden a `feature-client`; no son capacidades pendientes
+del servidor.
 
 ## 7. Límites y funcionalidades no incluidas
 
