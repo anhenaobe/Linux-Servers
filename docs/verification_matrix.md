@@ -1,9 +1,19 @@
-# Matriz de verificación propuesta
+# Matriz de verificación
 
-Esta matriz no representa una suite formal. Los estados **Development check**
-corresponden únicamente a comprobaciones manuales de la rama del servidor. El
-responsable de `feature/testing` deberá diseñar, automatizar y registrar las
-pruebas formales.
+Esta matriz relaciona los requisitos del sistema con las verificaciones
+previstas durante el desarrollo y la integración del proyecto.
+
+Los estados **Development check** corresponden únicamente a comprobaciones
+manuales realizadas durante el desarrollo del servidor y no sustituyen las
+pruebas formales del equipo de testing.
+
+Los resultados registrados por el responsable de testing se mantienen en
+[`tests/README.md`](../tests/README.md). Esta matriz no modifica ni reinterpreta
+los estados PASS/FAIL allí registrados.
+
+Las pruebas unitarias descritas en este documento se consideran propuestas
+para completar la verificación del sistema y permanecen pendientes de
+implementación o automatización por el responsable de testing.
 
 | Requisito | Método propuesto | Tipo futuro | Resultado esperado | Estado actual | Responsable formal |
 |---|---|---|---|---|---|
@@ -26,6 +36,40 @@ pruebas formales.
 | NFR-005 | Revisar cierre de recursos | Sistema | Sin descriptores/threads activos | Pending formal test | Testing partner |
 | NFR-006 | Repetir conexiones y apagar con clientes bloqueados | Sistema | Workers se recolectan y apagado termina | Development check | Testing partner |
 
+## Pruebas unitarias propuestas
+
+Las siguientes pruebas corresponden a componentes que pueden verificarse de
+forma aislada. Su inclusión en esta matriz define la cobertura deseada, pero no
+implica que actualmente exista una suite automatizada.
+
+| ID | Componente | Verificación propuesta | Requisitos relacionados | Estado |
+|---|---|---|---|---|
+| UT-001 | `protocol::is_valid_username()` | Verificar usernames vacíos, válidos, de longitud límite, mayores de 32 bytes y con espacios o controles ASCII. | FR-004 | Pendiente de implementación por testing |
+| UT-002 | `protocol::is_valid_message()` | Verificar mensajes vacíos, válidos, de longitud límite, mayores de 986 bytes y con caracteres no permitidos por el protocolo. | FR-007, FR-011 | Pendiente de implementación por testing |
+
+## Pruebas de integración
+
+Las pruebas de integración y sistema ejecutadas por el responsable de testing
+se documentan en [`tests/README.md`](../tests/README.md).
+
+Ese documento contiene actualmente los casos `TC01` a `TC10`, que cubren entre
+otros:
+
+- identificación mediante `HELLO`;
+- envío de `MSG` y broadcast;
+- cierre mediante `QUIT`;
+- rechazo de mensajes antes de identificación;
+- comandos inválidos;
+- desconexión abrupta;
+- framing de mensajes fragmentados;
+- múltiples mensajes dentro de un mismo bloque TCP;
+- múltiples clientes concurrentes;
+- límites del protocolo.
+
+Los estados y observaciones de estos casos pertenecen al registro de testing y
+no se duplican en esta matriz para evitar mantener dos fuentes distintas de
+resultados.
+
 ## Comprobaciones del milestone (2026-10-02)
 
 Build CMake y smoke checks temporales fuera del repositorio: tres usuarios,
@@ -41,7 +85,13 @@ completó HELLO, dos MSG y QUIT.
 El apagado durante envíos grandes a un peer que no lee terminó correctamente;
 el error Broken pipe se aisló en la sesión.
 
-Todos los casos siguen **Pending formal test** para `feature/testing`, incluso
-los marcados Development check. No se ejecutaron detectores de carreras ni una
-suite formal. Validar especialmente emisiones simultáneas, resets de TCP,
-clientes lentos, límites de bytes UTF-8 y el último frame de QUIT.
+Las comprobaciones anteriores corresponden al milestone de desarrollo del
+servidor y no sustituyen los resultados registrados posteriormente por el
+responsable de testing.
+
+Los estados actuales de los casos `TC01` a `TC10` deben consultarse en
+[`tests/README.md`](../tests/README.md). La automatización de pruebas unitarias,
+de integración y de análisis de concurrencia permanece como trabajo de testing.
+
+Se recomienda mantener cobertura sobre emisiones simultáneas, resets TCP,
+clientes lentos, límites de bytes UTF-8 y liberación de recursos.
