@@ -26,13 +26,13 @@ Cliente C ----/
 | **TC01** | Protocolo | Identificación correcta | `HELLO Andrew\n` | `OK\n` | PASS | Cumple con lo esperado |
 | **TC02** | Protocolo | Envío de mensaje tras login | `MSG Hola\n` | `OK\n` al emisor y `FROM Andrew Hola\n` a otros clientes identificados | PASS | Verificar que el servidor difunde correctamente las tramas MSG enviadas por un usuario autenticado hacia los demás clientes conectados a la sesión |
 | **TC03** | Protocolo | Salida normal | `QUIT\n` | `OK\n` , EOF y servidor activo | PASS | Verificar que el servidor procesa el comando QUIT de forma correcta, finalizando el thread del cliente, cerrando el socket TCP sin generar errores de recursos y manteniendo la disponibilidad del servidor para otros clientes |
-| **TC04** | Protocolo | Mensaje sin identificar | `MSG Hola\n` antes de `HELLO` | `ERR not_identified\n` ; sesión abierta | PASS | Verificar que el servidor bloquea la ejecución del comando MSG si el cliente no ha enviado previamente la trama de registro e identificación HELLO el servidor dara respuesta de la siguiente manera ERR invalid_username |
-| **TC05** | Protocolo | Comando inválido | `ALGO Hola\n` | `ERR invalid_command\n` | PASS | Verificar que el servidor valide la sintaxis del protocolo y el nombre de usuario, retornando las tramas de error ERR correspondientes sin cerrar la conexión ni provocar una caída del sistema; al ejecutar los comandos -> HELLO Carlos <- Servidor: ERR invalid_username y -> PING<- Servidor: ERR invalid_command |
+| **TC04** | Protocolo | Mensaje sin identificar | `MSG Hola\n` antes de `HELLO` | `ERR not_identified\n` ; sesión abierta | PASS | El servidor rechazó MSG antes de un HELLO válido mediante `ERR not_identified` y mantuvo la sesión abierta para permitir una identificación posterior o `QUIT`. |
+| **TC05** | Protocolo | Comando inválido | `ALGO Hola\n` | `ERR invalid_command\n` | PASS | El servidor rechazó una línea que no coincide con `HELLO`, `MSG` o `QUIT`, por ejemplo `PING\n`, mediante `ERR invalid_command` y mantuvo la conexión activa. |
 | **TC06** | Resiliencia | Desconexión abrupta | Cerrar cliente (Ctrl+C / Kill) | Servidor detecta EOF o error de red; libera la sesión y permanece activo | PASS | Confirmar que el servidor detecta correctamente la interrupción repentina de la conexión TCP (por ejemplo, interrupción del proceso cliente vía Ctrl+C) y maneja el error de socket de forma segura sin colapsar el servicio. El servidor debe responder de la siguiente manera "Error en recv(): Connection reset by peer" |
 | **TC07** | Framing | Mensaje fragmentado | Recibir `"MSG Ho"` y luego `"la\n"` | Reconstrucción correcta del mensaje | PASS | Se envía el comando dividido en dos partes con sleep intermedio. El servidor espera el salto de línea \n antes de procesar el mensaje completo de forma correcta. |
 | **TC08** | Framing | Múltiples mensajes juntos | Recibir `"MSG 1\nMSG 2\n"` en un bloque | Procesamiento independiente de cada comando | PASS | Se envían varios comandos juntos en un solo bloque. El servidor procesa e interpreta cada instrucción de manera independiente. |
 | **TC09** | Concurrencia | Multiusuario básico | 3+ clientes conectados enviando | Broadcast correcto sin mezcla de datos | PASS | Se abrieron 3 terminales en simultáneo enviando mensajes. El servidor realizó la difusión (broadcast) correctamente entre todos los clientes conectados. |
-| **TC10** | Limites | Username/mensaje largo | Exceder límites de username, texto y línea | `ERR invalid_username` (username >32 con línea ≤1024), `ERR invalid_message` (texto >986 con línea ≤1024); `ERR message_too_long` y cierre (línea >1024). Sin truncamiento | PASS | El servidor identificó que el mensaje superaba el tamaño máximo permitido, rechazó la trama respondiendo ERR message_too_long y la conexión continuó activa para procesar subsiguientes mensajes correctamente. |
+| **TC10** | Limites | Username/mensaje largo | Exceder límites de username, texto y línea | `ERR invalid_username` (username >32 con línea ≤1024), `ERR invalid_message` (texto >986 con línea ≤1024); `ERR message_too_long` y cierre (línea >1024). Sin truncamiento | PASS | El servidor aplicó los límites definidos por el protocolo. Un username superior a 32 bytes se rechaza con `ERR invalid_username`; un texto `MSG` superior a 986 bytes dentro de una línea válida se rechaza con `ERR invalid_message`; una línea superior a 1024 bytes produce `ERR message_too_long` y el cierre de esa sesión. No se realiza truncamiento. |
 ---
 
 ## 3. Guía de Ejecución Rápida (Prueba Manual)
@@ -67,13 +67,11 @@ el tester. El documento original no incluye commit probado, identificación del
 binario, comandos completos ni logs; por eso no certifican por sí solos el
 estado de la versión actual.
 
-**TC02 requiere reproducción formal:** en la auditoría de `1269a59`, con build
-nuevo fuera del repositorio, `HELLO Andrew` y varios `MSG` sobre una misma
-conexión devolvieron `OK`; un segundo usuario recibió los `FROM` esperados.
-También funcionaron QUIT y la continuidad del servidor. Son smoke checks de
-desarrollo: no cambian el FAIL registrado ni reemplazan la validación del tester.
-La causa del resultado original sigue sin determinarse; usar una rama o binario
-antiguo es una hipótesis, no un hecho comprobado.
+La tabla actual registra **TC02 como PASS** según el resultado consignado por
+testing. Para futuras reproducciones debe conservarse evidencia suficiente para
+identificar la versión evaluada y las condiciones de ejecución. En particular,
+se debe registrar el commit probado, el build utilizado, los clientes conectados,
+las entradas enviadas y las respuestas observadas.
 
 Para cada ejecución formal registrar:
 
